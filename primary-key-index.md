@@ -18,15 +18,13 @@ Propose the first version of primary key index for TAE.
 
 As for the granularity of index, we divide the index into two categories, one is a table-level index, and the other is an index set composed of a series of partitioned indexes.
 
-Many databases use a table-level B+Tree (or any other extensions like BwTree, ART, etc.) as primary key index. In theory that's pretty easy to use, and the query time is bounded as well. But in **TAE**, the data for one table consists of many segments, and each segment must be unordered first and then ordered. Compaction, merging, or splitting may take place afterwards, which makes the table-level index hard to maintain. Since that, the index of **TAE** should be more fine-grained, i.e. segment-level and block-level indexes, so that the lifetime of indexes would be binded to segments and blocks.
+Many databases use a table-level B+Tree (or any other extensions like BwTree, ART, etc.) as primary key index. In theory that's pretty easy to use, and the query time is bounded as well. But in **TAE**, the data for one table consists of many segments, and each segment must be unordered first and then ordered. Compaction, merging, or splitting may take place afterwards, which makes the table-level index hard to maintain. Since that, the index of **TAE** should be more fine-grained, i.e. segment-level and block-level indexes, so that the lifetime of indexes would be binded to segments and blocks. Besides, if we choose a pure in-memory table-level index like many databases did (e.g. duckdb. we also considered fujimap as an option), the memory consumption would be large and unbounded. And for a disk-based table-level index, several I/Os per query are unavoidable, which results in poor performance. In a word, table-level index is a bad choice for our scenario.
 
 <img src="https://github.com/zzl200012/docs-public/blob/main/seg-format.svg" height="50%" width="50%" />
 
 The index is partitioned to each segments, and the layout of every segment is shown above (we only care about primary key index here, so other fields e.g. header, version nodes, checksum, etc. are all represented as "blk_*"). There are two types of segment in **TAE**, appendable or non-appendable. An appendable segment consists of at least one appendable block plus multiple non-appendable blocks. Appendable block index is an in-memory ART plus zonemap while the non-appendable one is a bloomfilter plus zonemap. For non-appendable segment, the index is a two-level structure, bloomfilter and zonemap respectively. As for bloomfilter, there are two options, a segment-based bloomfilter, or a block-based bloomfilter. The Segment-based is a better choice when the index can be fully resident in memory. The block-based is just like Rocksdb's approach.
 
-As far as we know, Apache Kudu used the same approach as described above, to do both primary key deduplication and point query acceleration.
-
-todo
+As far as we know, Apache Kudu used similar approach as described above, to do both primary key deduplication and point query acceleration. In Kudu, every DiskRowSet (equivalent to our segment) has a bloom filter, plus a primary key index (using MassTree, an extension of B+Tree) which works the same as our zone map. Kudu manages all those structures with an LRU cache, and we do this as well.
 
 ### Maintenance
 
