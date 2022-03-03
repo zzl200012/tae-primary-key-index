@@ -18,11 +18,15 @@ Propose the first version of primary key index for TAE.
 
 As for the granularity of index, we divide the index into two categories, one is a table-level index, and the other is an index set composed of a series of partitioned indexes.
 
-Many databases use a table-level B+Tree (or any other extensions like BwTree, ART, etc.) as primary key index. In theory that's pretty easy to use, and the query time is bounded as well. But in **TAE**, the data for one table consists of many segments, and each segment must be unordered first and then ordered. Compaction, merging, or splitting may take place afterwards, which makes the table-level index hard to maintain. Since that, the index of **TAE** should be more fine-grained, i.e. segment-level and block-level indexes.
+Many databases use a table-level B+Tree (or any other extensions like BwTree, ART, etc.) as primary key index. In theory that's pretty easy to use, and the query time is bounded as well. But in **TAE**, the data for one table consists of many segments, and each segment must be unordered first and then ordered. Compaction, merging, or splitting may take place afterwards, which makes the table-level index hard to maintain. Since that, the index of **TAE** should be more fine-grained, i.e. segment-level and block-level indexes, so that the lifetime of indexes would be binded to segments and blocks.
 
-<img src="https://github.com/zzl200012/docs-public/blob/main/seg-format.svg" height="70%" width="70%" />
+<img src="https://github.com/zzl200012/docs-public/blob/main/seg-format.svg" height="50%" width="50%" />
 
+The index is partitioned to each segments, and the layout of every segment is shown above (we only care about primary key index here, so other fields e.g. header, version nodes, checksum, etc. are all represented as "blk_*"). There are two types of segment in **TAE**, appendable or non-appendable. An appendable segment consists of at least one appendable block plus multiple non-appendable blocks. Appendable block index is an in-memory ART plus zonemap while the non-appendable one is a bloomfilter plus zonemap. For non-appendable segment, the index is a two-level structure, bloomfilter and zonemap respectively. As for bloomfilter, there are two options, a segment-based bloomfilter, or a block-based bloomfilter. The Segment-based is a better choice when the index can be fully resident in memory. The block-based is just like Rocksdb's approach.
 
+As far as we know, Apache Kudu used the same approach as described above, to do both primary key deduplication and point query acceleration.
+
+todo
 
 ### Maintenance
 
