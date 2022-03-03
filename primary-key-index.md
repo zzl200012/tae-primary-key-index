@@ -26,7 +26,11 @@ The index is partitioned to each segments, and the layout of every segment is sh
 
 As far as we know, Apache Kudu used similar approach as described above, to do both primary key deduplication and point query acceleration. In Kudu, every DiskRowSet (equivalent to our segment) has a bloom filter, plus a primary key index (using MassTree, an extension of B+Tree) which works the same as our zone map. Kudu manages all those structures with an LRU cache, and we do this as well.
 
-### Maintenance
+### Lifetime
+
+Currently there are two options for primary key index in **TAE**: in-memory or on-disk. For the zonemap, we can just let it resident in memory since it's really small. For ART, we know it's only available for appendable block, but only few of that exists simultaneously in **TAE**, the memory consumption is also limited. So the only concern is bloom filter, we should decide wether let it resident in memory or not.
+
+<img src="https://github.com/zzl200012/docs-public/blob/main/lifetime.svg" height="50%" width="50%" />
 
 ### Performance & Correctness
 
