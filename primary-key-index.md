@@ -36,17 +36,22 @@ In in-memory mode, the procedure is (A) -> (B) -> (C) -> (D) -> (F), while on-di
 
 Notice that every structures' lifetime is bound to its host, block or segment, appendable or non-appendable. With the layout being changed, some of them are changed, and some are not. 
 
-### Performance & Correctness
+### Miscellaneous
+
+#### Correctness
+
+For primary key, there is only append or delete upon a segment. If delete occurs, we just ignore that, since false positive is allowed, only some more I/O cost on the underlying data is paid. When deletes are excessive, the whole segment/block would be re-constructed (via compaction), so we don't deal with it individually. For the changing part (i.e. appendable block), we assign an ART to get correct answer without any I/O.
+
+#### Performance
+
+Thanks to the fine-grained design, maintenance becomes easier, and memory consumption is controllable. So one last concern is performance, every time a request comes, we would iterate all segments until we **exactly** find the target or reach the end. "exactly" means once we get positive on a segment, we would dig into the underlying data and have a check whether it exists for real. Of course it would be super slow, so we have the following decisions:
+
+1. Use better "bloom filter" optimized for static data, since our bloom filters are all built for immutable data.
+2. 
 
 ## Detailed Workflow
 
 ## Interface Definitions
 
-# Drawbacks
-Why we _wouldn't_ do this.
+# Future Works
 
-# Rationale / Alternatives
-Explain why the design is right. List alternate designs and ideas and why they weren't considered for the solution.
-
-# Unresolved Questions
-You should gather any open questions and list them in this section.
