@@ -48,7 +48,7 @@ Thanks to the fine-grained design, maintenance becomes easier, and memory consum
 
 1. Use better "bloom filter" optimized for static data, since our bloom filters are all built for immutable data, to gain better performance with lower false positive rate.
 1. Use carefully designed "zone map", which means it's not a simple zonemap, but a more fine-grained secondary index like structure (e.g. imprints index), in order to avoid exact I/Os as more as possible.
-1. In high-concurrency scenario, we can leverage such properties: (1) every segments are independent (2) inside a non-appendable segment/block, all fields are thread-safe since they are immutable  to build a query pipeline and boost our processing.
+1. In high-concurrency scenario, we can leverage such properties: (1) every segments are independent (2) inside a non-appendable segment/block, all fields are thread-safe since they are immutable, to build a query pipeline and boost our processing.
 
 ## Detailed Workflow
 
