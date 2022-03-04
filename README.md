@@ -1,4 +1,4 @@
-- Feature Name: Primary Key Index of TAE
+- Feature Name: TAE Primary Key Index
 - Status: draft
 - Start Date: 2022-03-02
 - Authors: [Zilong Zhou](https://github.com/zzl200012)
@@ -46,8 +46,9 @@ For primary key, there is only append or delete upon a segment. If delete occurs
 
 Thanks to the fine-grained design, maintenance becomes easier, and memory consumption is controllable. So one last concern is performance, every time a request comes, we would iterate all segments until we **exactly** find the target or reach the end. "exactly" means once we get positive on a segment, we would dig into the underlying data and have a check whether it exists for real. Of course it would be super slow, so we have the following decisions:
 
-1. Use better "bloom filter" optimized for static data, since our bloom filters are all built for immutable data.
-2. 
+1. Use better "bloom filter" optimized for static data, since our bloom filters are all built for immutable data, to gain better performance with lower false positive rate.
+1. Use carefully designed "zone map", which means it's not a simple zonemap, but a more fine-grained secondary index like structure (e.g. imprints index).
+1. 
 
 ## Detailed Workflow
 
