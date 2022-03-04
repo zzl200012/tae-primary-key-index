@@ -1,7 +1,7 @@
 - Feature Name: Primary Key Index of TAE
 - Status: draft
 - Start Date: 2022-03-02
-- Authors: Zilong Zhou
+- Authors: [Zilong Zhou](https://github.com/zzl200012)
 - Implementation PR:
 - Issue for this RFC:
 
