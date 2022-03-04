@@ -62,6 +62,8 @@ Thanks to the fine-grained design, maintenance becomes easier, and memory consum
 
 ### Query
 
+<img src="https://github.com/zzl200012/docs-public/blob/main/idx-query.svg" height="60%" width="60%" />
+
 ## Interface Definitions
 
 # Future Works
