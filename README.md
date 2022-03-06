@@ -54,13 +54,13 @@ Thanks to the fine-grained design, maintenance becomes easier, and memory consum
 
 ### Update
 
-<img src="https://github.com/zzl200012/docs-public/blob/main/idx-update.svg" height="60%" width="60%" />
+<img src="https://github.com/zzl200012/docs-public/blob/main/idx-update-2.svg" height="60%" width="60%" />
 
 **Procedure:**
 
 ### Build
 
-<img src="https://github.com/zzl200012/docs-public/blob/main/idx-build.svg" height="60%" width="60%" />
+<img src="https://github.com/zzl200012/docs-public/blob/main/idx-build-2.svg" height="60%" width="60%" />
 
 **Procedure:**
 
