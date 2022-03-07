@@ -46,7 +46,7 @@ For primary key, there is only append or delete upon a segment. If delete occurs
 
 Thanks to the fine-grained design, maintenance becomes easier, and memory consumption is controllable. So one last concern is performance, every time a request comes, we would iterate all segments until we **exactly** find the target or reach the end. "exactly" means once we get positive on a segment, we would dig into the underlying data and have a check whether it exists for real. Of course it would be super slow, so we have the following decisions:
 
-1. Use better "bloom filter" optimized for static data, since our bloom filters are all built for immutable data, to gain better performance with lower false positive rate.
+1. Use better "bloom filter" optimized for static data, since our bloom filters are all built for immutable data, to gain better performance with lower false positive rate. For more, see: [Binary Fuse Filter Evaluation](https://github.com/zzl200012/filterexp)
 1. Use carefully designed "zone map", which means it's not a simple zonemap, but a more fine-grained secondary index like structure (e.g. imprints index), in order to avoid exact I/Os as more as possible.
 1. In high-concurrency scenario, we can leverage such properties: (1) every segments are independent (2) inside a non-appendable segment/block, all fields are thread-safe since they are immutable, to build a query pipeline and boost our processing.
 
@@ -56,19 +56,118 @@ Thanks to the fine-grained design, maintenance becomes easier, and memory consum
 
 <img src="https://github.com/zzl200012/docs-public/blob/main/idx-update-2.svg" height="60%" width="60%" />
 
-**Procedure:**
+Only mutable part of primary key index could be updated (i.e. appendable block's index), the index update is bound to the data insertion procedure. BTW, we assume that the inserting data was already guaranteed non-duplicate.
+
+1. Find the correct block to insert.
+2. Update zonemap and ART of the block.
+3. Insert data into the appendable block
 
 ### Build
 
 <img src="https://github.com/zzl200012/docs-public/blob/main/idx-build-2.svg" height="60%" width="60%" />
 
-**Procedure:**
+Index building in **TAE** is bound to data file generation (e.g. merge sort blocks to a segment, freeze a non-appendable block from appendable block, reconstruct a new segment from an old segment which has too many updates or deletes). Since sorting and persisting would take a long time, more updates on the involved data file would occur before the data file is terminated. However, only insertion and deletion is possible for primary key inside a data file; further, insertion is not available for the candidate data files (before selected as a candidate, they are considered to be non-appendable), so only deletion would occur here. But we could not handle that currently, because our *binary fuse filter* doesn't support deletion, so deletion on some keys that already involved into the previous filter construction can not be performed. Hence we fetch a read view (i.e. baseline) before doing the following procedures, and primary key index construction would just follow this read view which is immutable then.
+
+1. Segment reconstruction
+   * Apply all the updates and deletes to the origin data, get a baseline segment data
+   * Generate a new index from the baseline data
+   * Ingest other incoming updates of baseline data, and commit the newly built index with the final data together
+2. Segment flushing
+   * Merge sort blocks to generate the baseline segment data
+   * Construct index (could be parallelized with data generation. Before merge sorting, we fetch a read view of every block and its index, and we can just follow this read view to build our primary key index concurrently) from baseline data
+   * Ingest other incoming updates of baseline data, and commit the index with the final data together
+3. Block committing
+   * Just like (1), but nothing to do with the baseline data.
 
 ### Query
 
 <img src="https://github.com/zzl200012/docs-public/blob/main/idx-query.svg" height="60%" width="60%" />
 
-**Procedure:**
+For simplicity, the searching process is pretty straightforward currently. Notice that the deduplication process is batched, which means as long as one key within the batch raise a positive, a duplication error would be thrown immediately.
+
+1. Deduplication
+
+   * Iterate all the segments
+
+     For all the segments:
+
+     * If non-appendable segment
+
+       * In-memory mode
+
+         (1) For all the keys in the batch, search the segment-level filter
+
+         ​      If all negative -> go to next segment
+
+         (2) For all the keys left, search the segment zone map to locate the target block
+
+         ​      If all no range matched (e.g. [0, 4], [7, 9], [11, 20], but key is 10) -> go to next segment
+
+         (3) For all the keys left, load the certain block and check the existence
+
+         ​      If at least one key does exist -> return DuplicateError
+
+         ​      Else -> go to next segment
+
+       * On-disk mode
+
+         (1) For all the keys in the batch, search the segment zone map to locate the target block
+
+         ​      If all no range matched (e.g. [0, 4], [7, 9], [11, 20], but key is 10) -> go to next segment
+
+         (2) For all the keys left, search the block-level filter of the certain block
+
+         ​      If all negative -> go to next segment
+
+         (3) For all the keys left, load the certain block and check the existence
+
+         ​      If at least one key does exist -> return DuplicateError
+
+         ​      Else -> go to next segment
+
+   * No segment left -> return False
+
+2. Point query
+
+   * Iterate all the segments
+
+     For all the segments:
+
+     * If non-appendable segment
+
+       * In-memory mode
+
+         (1) Search segment-level filter
+
+         ​      If negative -> go to next segment
+
+         (2) Search segment zone map to locate the target block
+
+         ​      If no range matched (e.g. [0, 4], [7, 9], [11, 20], but key is 10) -> go to next segment
+
+         (3) Load the certain block and check the existence
+
+         ​      If the key does exist -> return several informations for the query key
+
+         ​      Else -> go to next segment
+
+       * On-disk mode
+
+         (1) Search segment zone map to locate the target block
+
+         ​      If no range matched (e.g. [0, 4], [7, 9], [11, 20], but key is 10) -> go to next segment
+
+         (2) Search block-level filter of the certain block
+
+         ​      If negative -> go to next segment
+
+         (3) Load the certain block and check the existence
+
+         ​      If the key does exist -> return several informations for the query key
+
+         ​      Else -> go to next segment
+
+   * No segment left -> return False
 
 ## Implementation
 
