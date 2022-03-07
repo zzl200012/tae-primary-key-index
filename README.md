@@ -171,5 +171,15 @@ For simplicity, the searching process is pretty straightforward currently. Notic
 
 ## Implementation
 
+1. Initialize basic skeleton (e.g. layout, common utils, etc) just for mocking use
+2. develop the prototype
+
+TODO: details 
+
 # Future Works
 
+1. Fully optimized zone map
+2. Pipeline search
+3. More parallelized processing
+4. CPU Cache oriented optimizations
+5. ......
