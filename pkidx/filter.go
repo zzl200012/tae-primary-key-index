@@ -1,4 +1,4 @@
-package index
+package pkidx
 
 type SegmentFilter struct {
 	// In-memory
