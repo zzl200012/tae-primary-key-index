@@ -1,5 +1,5 @@
 - Feature Name: TAE Primary Key Index
-- Status: draft
+- Status: **Draft** (may be reworked then)
 - Start Date: 2022-03-02
 - Authors: [Zilong Zhou](https://github.com/zzl200012)
 - Implementation PR:
