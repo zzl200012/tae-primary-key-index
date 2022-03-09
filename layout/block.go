@@ -21,3 +21,7 @@ func (blk *Block) GetBlockOffset() uint32 {
 func (blk *Block) ProbeSingleKey(key tae.KeyType) tae.ProbeResult {
 	panic("")
 }
+
+func (blk *Block) HasDuplication(keys []tae.KeyType) bool {
+	return false
+}
