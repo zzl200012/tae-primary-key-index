@@ -1,3 +1,5 @@
+**For the prototype, see:** https://github.com/zzl200012/tae_index
+
 - Feature Name: TAE Primary Key Index
 - Status: **Draft** (may be reworked then)
 - Start Date: 2022-03-02
