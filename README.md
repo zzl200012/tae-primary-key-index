@@ -1,3 +1,5 @@
+## Status: Outdated(2022/4/30)
+
 **For the prototype, see:** https://github.com/zzl200012/tae_index
 
 - Feature Name: TAE Primary Key Index
